@@ -1,0 +1,45 @@
+{{- $fullName := include "redisfailover-chart.fullname" . -}}
+
+{{- if .Values.sentinel.exporter.enabled }}
+---
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMPodScrape
+metadata:
+  name: {{ include "redisfailover-chart.fullname" . }}
+spec:
+  jobLabel: redis-operator-sentiel
+  podMetricsEndpoints:
+    - port: metrics
+      path: /metrics
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: redis-operator
+      app.kubernetes.io/component: sentinel
+{{- end }}
+
+{{- if .Values.redis.exporter.enabled }}
+---
+{{- $fullName := include "redisfailover-chart.fullname" . -}}
+apiVersion: operator.victoriametrics.com/v1beta1
+kind: VMServiceScrape
+metadata:
+  name: {{ include "redisfailover-chart.fullname" . }}
+spec:
+  jobLabel: redis-operator-redis
+  endpoints:
+    - targetPort: 9121
+      path: /metrics
+      scheme: http
+  namespaceSelector:
+    matchNames:
+      - {{ .Release.Namespace }}
+  selector:
+    matchLabels:
+      app.kubernetes.io/managed-by: redis-operator
+      app.kubernetes.io/component: redis
+{{- end }}
+
