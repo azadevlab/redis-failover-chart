@@ -1,0 +1,59 @@
+{{- $fullName := include "redisfailover-chart.fullname" . -}}
+apiVersion: databases.spotahome.com/v1
+kind: RedisFailover
+metadata:
+  name: {{ include "redisfailover-chart.fullname" . }}
+  labels:
+    {{- include "redisfailover-chart.labels" . | nindent 4 }}
+spec:
+  sentinel:
+    {{- if .Values.sentinel.replicaCount }}
+    replicas: {{ if lt .Values.sentinel.replicaCount 3 }} {{ fail "SENTIEL - Replica count must not be less than 3" }} {{ else }} {{ .Values.sentinel.replicaCount }} {{ end }}
+    {{- end }}
+    image: {{ .Values.sentinel.image }}
+    {{- if .Values.sentinel.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.sentinel.imagePullPolicy }}
+    {{- end }}
+    ### TODO !!! add to operator's code env support 
+    # {{- with .Values.sentinel.env }}
+    # env:
+    #   {{- toYaml . | nindent 6 }}
+    # {{- end }}
+    resources:
+      {{- toYaml .Values.sentinel.resources | nindent 6 }}
+    {{- with .Values.sentinel.topologySpreadConstraints }}
+    topologySpreadConstraints:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.sentinel.exporter }}
+    exporter:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+
+  redis:
+    {{- if .Values.redis.replicaCount }}
+    replicas: {{ if lt .Values.redis.replicaCount 2 }} {{ fail "REDIS - Replica count must not be less than 2" }} {{ else }} {{ .Values.redis.replicaCount }} {{ end }}
+    {{- end }}
+    image: {{ .Values.redis.image }}
+    {{- if .Values.redis.imagePullPolicy }}
+    imagePullPolicy: {{ .Values.redis.imagePullPolicy }}
+    {{- end }}
+    ### TODO !!! add to operator's code env support 
+    # {{- with .Values.sentinel.env }}
+    # env:
+    #   {{- toYaml . | nindent 6 }}
+    # {{- end }}
+    resources:
+      {{- toYaml .Values.redis.resources | nindent 6 }}
+    {{- with .Values.redis.topologySpreadConstraints }}
+    topologySpreadConstraints:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.redis.exporter }}
+    exporter:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}
+    {{- with .Values.redis.storage }}
+    storage:
+      {{- toYaml . | nindent 6 }}
+    {{- end }}

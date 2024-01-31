@@ -1,0 +1,62 @@
+sentinel:
+  # replicaCount: 3 # def val
+  image: &imageRedis "docker-gateway/redis:6.2.6-alpine"
+  # imagePullPolicy: IfNotPresent
+  ### TODO !!! add to operator's code env support
+  # env:
+  #   REDISCLI_AUTH: "<path:secret/data/env/stage/environments/kubernetes/redis#auth>" # get from vault
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 400m
+      memory: 500Mi
+  topologySpreadConstraints:
+    - labelSelector:
+        matchLabels:
+          app.kubernetes.io/component: sentinel
+      maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+  exporter:
+    enabled: true
+    image: &imageRedisExporter "quay.io/oliver006/redis_exporter:v1.43.0"
+
+redis:
+  # replicas: 3 # def val
+  image: *imageRedis
+  # imagePullPolicy: IfNotPresent
+  ### TODO !!! add to operator's code env support
+  # env:
+  #   REDISCLI_AUTH: "<path:secret/data/env/stage/environments/kubernetes/redis#auth>" # get from vault
+  resources:
+    requests:
+      cpu: 100m
+      memory: 100Mi
+    limits:
+      cpu: 400m
+      memory: 500Mi
+  topologySpreadConstraints:
+    - labelSelector:
+        matchLabels:
+          app.kubernetes.io/component: redis
+      maxSkew: 1
+      topologyKey: kubernetes.io/hostname
+      whenUnsatisfiable: ScheduleAnyway
+  exporter:
+    enabled: true
+    image: *imageRedisExporter
+  ### by default we don't keep data
+  # storage:
+  #   keepAfterDeletion: true
+  #   persistentVolumeClaim:
+  #     metadata:
+  #       name: redisfailover-persistent-keep-data
+  #       # name: redisfailover-persistent-data
+  #     spec:
+  #       accessModes:
+  #         - ReadWriteOnce
+  #       resources:
+  #         requests:
+  #           storage: 3Gi
